@@ -7,8 +7,9 @@ body{
 }
 
 #gameArea {
-    width: 204px;
-    height: 204px;
+    /*width: 204px;
+    height: 204px;*/
+    box-sizing: content-box;
     background-color: transparent;
     border: 2px solid blue;
     display: flex;

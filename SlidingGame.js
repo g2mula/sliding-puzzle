@@ -1,182 +1,166 @@
-var SlidingGame = function () {
-    var defaultState = [
-        [1, 2, 3, 4],
-        [5, 6, 7, 8],
-        [9, 10, 11, 12],
-        [13, 14, 15, null]
-    ];
+function slidingGame(state, action) {
+    if (typeof state === 'undefined') {
+        return reset(state, action);
+    }
 
-    var state = [
-        [1, 2, 3, 4],
-        [5, 6, 7, 8],
-        [9, 10, 11, 12],
-        [13, 14, 15, null]
-    ];
+    switch (action.type) {
+        case 'RESET':
+            return reset(state, action);
+        case 'SHUFFLE':
+            return shuffle(state, action);
+        case 'MOVE':
+            return move(state, action);
+        default:
+            return state;
+    }
+}
 
-    var LEFT = 0,
-        RIGHT = 1,
-        UP = 2,
-        DOWN = 3;
+function reset(state, action) {
+    var rows = 4,
+        columns = 4,
+        row = [],
+        result = [],
+        counter = 1;
 
-    var SHUFFLE_MAX = 256;
+    if (action && action.rows && action.rows > 1) {
+        rows = action.rows;
+    }
 
-    var emptyTile = { i: 3, j: 3 };
+    if (action && action.columns && action.columns > 1) {
+        columns = action.columns;
+    }
 
-    var tiles = document.getElementById('gameArea').children;
+    for (var i = 0; i < rows; i++) {
+        row = [];
+        result.push(row);
+        for (var j = 0; j < columns; j++) {
+            row.push(counter++);
+        }
+    }
 
-    function resetState() {
-        state = defaultState.map(function (row) {
+    result[rows - 1][columns - 1] = null;
+    return result;
+}
+
+function shuffle(state, action) {
+    var rows = state.length,
+        columns = state.length ? state[0].length : 0,
+        i,
+        j,
+        randI,
+        randJ,
+        temp,
+        result = state.map(function (row) {
             return row.slice();
         });
-    }
 
-    function swap(i, j, x, y) {
-        temp = state[x][y];
-        state[x][y] = state[i][j];
-        state[i][j] = temp;
-    }
+    for (i = 0; i < rows; i++) {
+        for (j = 0; j < columns; j++) {
+            randI = Math.floor(Math.random() * rows);
+            randJ = Math.floor(Math.random() * columns);
 
-    function getSorroundingTiles(i, j) {
-        var tiles = [];
-        if (i !== 3) {
-            tiles.push({
-                i: i + 1,
-                j: j,
-                value: state[i + 1][j]
-            });
-        }
-
-        if (i !== 0) {
-            tiles.push({
-                i: i - 1,
-                j: j,
-                value: state[i - 1][j]
-            });
-        }
-
-        if (j !== 3) {
-            tiles.push({
-                i: i,
-                j: j + 1,
-                value: state[i][j + 1]
-            });
-        }
-
-        if (j !== 0) {
-            tiles.push({
-                i: i,
-                j: j - 1,
-                value: state[i][j - 1]
-            });
-        }
-
-        return tiles;
-    }
-
-    function shuffle() {
-        var i,
-            direction,
-            tile,
-            sorroundingTiles = [];
-
-        for (i = 0; i < SHUFFLE_MAX; i++) {
-            sorroundingTiles = getSorroundingTiles(emptyTile.i, emptyTile.j);
-            tile = sorroundingTiles[Math.floor(Math.random() * sorroundingTiles.length)];
-
-            swap(emptyTile.i, emptyTile.j, tile.i, tile.j);
-            setEmptyTile(tile.i, tile.j);
+            temp = result[i][j];
+            result[i][j] = result[randI][randJ];
+            result[randI][randJ] = temp;
         }
     }
 
-    function setEmptyTile(i, j) {
-        emptyTile.i = i;
-        emptyTile.j = j;
+    if (isSolvable(result)) {
+        return result;
     }
 
-    function updateElement(element, i, j) {
-        var value = state[i][j];
-        element.textContent = value || '';
-        element.dataset.state = JSON.stringify({ i: i, j: j, value: value });
+    temp = result[0][0];
+    result[0][0] = result[0][1];
+    result[0][1] = temp;
 
-        if (value) {
-            element.classList.remove('empty');
-        } else {
-            element.classList.add('empty');
-            setEmptyTile(i, j);
+    return result;
+}
+
+function move(state, action) {
+    var value = state[action.i][action.j],
+        rows = state.length,
+        columns = state.length ? state[0].length : 0,
+        i = 0,
+        j = 0,
+        distance,
+        result,
+        found = false;
+
+    if (value === null) {
+        return state;
+    }
+
+    for (i = 0; i < rows; i++) {
+        for (j = 0; j < columns; j++) {
+            if (state[i][j] === null) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            break;
         }
     }
 
-    function syncState() {
-        var i, j;
-        var index = 0;
-        for (i = 0; i < 4; i++) {
-            for (j = 0; j < 4; j++) {
-                updateElement(tiles[index], i, j);
-                index++;
+    if (!found) {
+        return state;
+    }
+    
+    distance = Math.abs(action.i - i) + Math.abs(action.j - j);
+    if (distance !== 1) {
+        return state;
+    }
+
+    result = state.map(function (row) {
+        return row.slice();
+    });
+
+    result[i][j] = value;
+    result[action.i][action.j] = null;
+
+    return result;
+}
+
+function isSolvable(state) {
+    var rows = state.length,
+        columns = state[0].length,
+        array = [].concat.apply([], state),
+        length = array.length,
+        inversions = 0,
+        i = 0,
+        j = 0,
+        blankIndex,
+        blankRow;
+
+    for (i = 0; i < length; i++) {
+        if (array[i] === null) {
+            blankIndex = i;
+            continue;
+        }
+
+        for (j = i + 1; j < length; j++) {
+            if (array[j] === null) {
+                blankIndex = j;
+                continue;
+            }
+
+            if (array[i] > array[j]) {
+                inversions++;
             }
         }
     }
 
-    function tileMove(tileState, direction) {
-        if (!tileState.value) {
-            return false;
-        }
-
-        var verticalModifier = 0;
-        var horizontalModifier = 0;
-
-        switch (direction) {
-            case LEFT:
-                horizontalModifier = -1;
-                break;
-            case RIGHT:
-                horizontalModifier = 1;
-                break;
-            case UP:
-                verticalModifier = -1;
-                break;
-            case DOWN:
-                verticalModifier = 1;
-                break;
-            default:
-                break;
-        }
-
-        if (tileState.i + verticalModifier !== emptyTile.i) {
-            return false;
-        }
-
-        if (tileState.j + horizontalModifier !== emptyTile.j) {
-            return false;
-        }
-
-        swap(tileState.i, tileState.j, emptyTile.i, emptyTile.j);
-        return true;
+    if (columns % 2) {
+        return inversions % 2 === 0;
     }
 
-    this.initialize = function () {
-        shuffle();
-        syncState();
+    blankRow = Math.floor(blankIndex / columns);
+
+    if ((rows - blankRow) % 2) {
+        return inversions % 2 === 0;
     }
 
-    this.shuffle = function () {
-        shuffle();
-        syncState();
-    };
-
-    this.reset = function () {
-        resetState();
-        syncState();
-    };
-
-    this.moveTile = function (tileState) {
-        if (!tileState.value) {
-            return;
-        }
-
-        if (tileMove(tileState, LEFT) || tileMove(tileState, RIGHT) || tileMove(tileState, UP) || tileMove(tileState, DOWN)) {
-            syncState();
-        }
-    }
-};
+    return inversions % 2 !== 0;
+}
 

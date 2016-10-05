@@ -4,29 +4,19 @@
 <head>
     <title>Sliding Game</title>
     <link href="index.css" type="text/css" rel="stylesheet">
+    <script src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
 </head>
 
 <body>
     <div id="gameArea">
-        <div class="tile">1</div>
-        <div class="tile">2</div>
-        <div class="tile">3</div>
-        <div class="tile">4</div>
-        <div class="tile">5</div>
-        <div class="tile">6</div>
-        <div class="tile">7</div>
-        <div class="tile">8</div>
-        <div class="tile">9</div>
-        <div class="tile">10</div>
-        <div class="tile">11</div>
-        <div class="tile">12</div>
-        <div class="tile">13</div>
-        <div class="tile">14</div>
-        <div class="tile">15</div>
-        <div class="tile empty"></div>
     </div>
     <button type="button" id="shuffleButton">Shuffle</button>
     <button type="button" id="resetButton">Reset</button>
+    <br>
+    <input type="range" min="2" max="10" id="rowsInput" value="4"><span id="rowsSpan">4</span> Rows
+    <br>
+    <input type="range" min="2" max="10" id="columnsInput" value="4"><span id="columnsSpan">4</span> Columns
+
     <script type="text/javascript" src="SlidingGame.js"></script>
     <script type="text/javascript" src="index.js"></script>
 </body>
