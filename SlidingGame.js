@@ -10,6 +10,8 @@ function slidingGame(state, action) {
             return shuffle(state, action);
         case 'MOVE':
             return move(state, action);
+        case 'KEY_MOVE':
+            return keyMove(state, action);
         default:
             return state;
     }
@@ -76,38 +78,74 @@ function shuffle(state, action) {
     return result;
 }
 
+function keyMove(state, action) {
+    var blankTile = findBlank(state),
+        isTop = blankTile.i === 0,
+        isLeft = blankTile.j === 0,
+        isBottom = blankTile.i === state.length - 1,
+        isRight = blankTile.j === (state.length && state[0].length - 1),
+        tileToMove;
+
+    if (!blankTile) {
+        return state;
+    }
+
+    switch (action.key) {
+        case 'KeyW':
+        case 'ArrowUp':
+            if (!isBottom) {
+                tileToMove = { i: blankTile.i + 1, j: blankTile.j };
+            }
+            break;
+        case 'KeyA':
+        case 'ArrowLeft':
+            if (!isRight) {
+                tileToMove = { i: blankTile.i, j: blankTile.j + 1 };
+            }
+            break;
+        case 'KeyS':
+        case 'ArrowDown':
+            if (!isTop) {
+                tileToMove = { i: blankTile.i - 1, j: blankTile.j };
+            }
+            break;
+        case 'KeyD':
+        case 'ArrowRight':
+            if (!isLeft) {
+                tileToMove = { i: blankTile.i, j: blankTile.j - 1 };
+            }
+            break;
+        default:
+            break;
+    }
+
+    if (!tileToMove) {
+        return state;
+    }
+
+    return move(state, {
+        type: 'MOVE',
+        i: tileToMove.i,
+        j: tileToMove.j
+    });
+}
+
 function move(state, action) {
     var value = state[action.i][action.j],
-        rows = state.length,
-        columns = state.length ? state[0].length : 0,
-        i = 0,
-        j = 0,
         distance,
         result,
-        found = false;
+        found = false,
+        blankTile = findBlank(state);
 
     if (value === null) {
         return state;
     }
 
-    for (i = 0; i < rows; i++) {
-        for (j = 0; j < columns; j++) {
-            if (state[i][j] === null) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            break;
-        }
-    }
-
-    if (!found) {
+    if (!blankTile) {
         return state;
     }
-    
-    distance = Math.abs(action.i - i) + Math.abs(action.j - j);
+
+    distance = Math.abs(action.i - blankTile.i) + Math.abs(action.j - blankTile.j);
     if (distance !== 1) {
         return state;
     }
@@ -116,7 +154,7 @@ function move(state, action) {
         return row.slice();
     });
 
-    result[i][j] = value;
+    result[blankTile.i][blankTile.j] = value;
     result[action.i][action.j] = null;
 
     return result;
@@ -164,3 +202,19 @@ function isSolvable(state) {
     return inversions % 2 !== 0;
 }
 
+function findBlank(state) {
+    var rows = state.length,
+        columns = state.length ? state[0].length : 0,
+        i = 0,
+        j = 0;
+
+    for (i = 0; i < rows; i++) {
+        for (j = 0; j < columns; j++) {
+            if (state[i][j] === null) {
+                return { i: i, j: j };
+            }
+        }
+    }
+
+    return undefined;
+}

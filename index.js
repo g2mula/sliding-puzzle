@@ -60,12 +60,16 @@ document.addEventListener('DOMContentLoaded', function () {
             rows: +rowsInput.value,
             columns: +columnsInput.value
         });
+
+        gameArea.focus();
     };
 
     document.getElementById('shuffleButton').onclick = function () {
         store.dispatch({
             type: 'SHUFFLE'
         });
+
+        gameArea.focus();
     };
 
     rowsInput.oninput = function () {
@@ -76,4 +80,12 @@ document.addEventListener('DOMContentLoaded', function () {
         columnsSpan.textContent = this.value;
     };
 
+    gameArea.addEventListener('keydown', function (e) {
+        store.dispatch({
+            type: 'KEY_MOVE',
+            key: e.key
+        });
+    });
+
+    gameArea.focus();
 });
